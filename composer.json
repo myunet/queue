@@ -1,5 +1,5 @@
 {
-    "name": "myunet/think-queue",
+    "name": "myunet/queue",
     "description": "A queue service for ThinkPHP framework",
     "type": "library",
     "keywords": [
