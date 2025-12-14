@@ -1,12 +1,5 @@
 <?php
 
-declare (strict_types=1);
-
-namespace myunet;
-
-// 应用公共文件
-use Exception;
-
 if (!function_exists('syspath')) {
     /**
      * 获取文件绝对路径
@@ -77,12 +70,12 @@ if (!function_exists('trace_file')) {
         if (!is_dir($path)) mkdir($path, 0777, true);
         $name = substr($exception->getFile(), strlen(syspath()));
         $file = $path . DIRECTORY_SEPARATOR . date('Ymd_His_') . strtr($name, ['/' => '.', '\\' => '.']);
-        $json = json_encode($exception instanceof common\exception\Exception ? $exception->getData() : [], 64 | 128 | 256);
+        $json = json_encode($exception instanceof \myunet\common\exception\Exception ? $exception->getData() : [], 64 | 128 | 256);
         $class = get_class($exception);
         return false !== file_put_contents($file,
                 "[CODE] {$exception->getCode()}" . PHP_EOL .
                 "[INFO] {$exception->getMessage()}" . PHP_EOL .
-                ($exception instanceof common\exception\Exception ? "[DATA] {$json}" . PHP_EOL : '') .
+                ($exception instanceof \myunet\common\exception\Exception ? "[DATA] {$json}" . PHP_EOL : '') .
                 "[FILE] {$class} in {$name} line {$exception->getLine()}" . PHP_EOL .
                 "[TIME] " . date('Y-m-d H:i:s') . PHP_EOL . PHP_EOL .
                 '[TRACE]' . PHP_EOL . $exception->getTraceAsString()
