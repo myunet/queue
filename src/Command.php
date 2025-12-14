@@ -4,8 +4,8 @@ declare (strict_types=1);
 
 namespace myunet;
 
-use think\admin\service\ProcessService;
-use think\admin\service\QueueService;
+use myunet\service\ProcessService;
+use myunet\service\QueueService;
 use think\console\Input;
 use think\console\Output;
 

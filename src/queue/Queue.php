@@ -306,14 +306,14 @@ class Queue extends Command {
                 defined('WorkQueueCode') or define('WorkQueueCode', $this->code);
                 if (class_exists($command = $this->queue->record->getAttr('command'))) {
                     // 自定义任务，支持返回消息（支持异常结束，异常码可选择 3|4 设置任务状态）
-                    /**@var \app\common\queue\Queue|QueueService $class */
+                    /**@var \myunet\Queue|QueueService $class */
                     $class = $this->app->make($command, [], true);
-                    if ($class instanceof \app\common\queue\Queue) {
+                    if ($class instanceof \myunet\Queue) {
                         $this->updateQueue(static::STATE_DONE, $class->initialize($this->queue)->execute($this->queue->data) ?: '');
                     } elseif ($class instanceof QueueService) {
                         $this->updateQueue(static::STATE_DONE, $class->initialize($this->queue->code)->execute($this->queue->data) ?: '');
                     } else {
-                        throw new \app\common\exception\Exception("自定义 {$command} 未继承 think\admin\Queue 或 think\admin\service\QueueService");
+                        throw new \myunet\common\exception\Exception("自定义 {$command} 未继承 think\admin\Queue 或 111");
                     }
                 } else {
                     // 自定义指令，不支持返回消息（支持异常结束，异常码可选择 3|4 设置任务状态）
@@ -333,7 +333,7 @@ class Queue extends Command {
      * @param integer $status 任务状态
      * @param string $message 消息内容
      * @param boolean $isSplit 是否分隔
-     * @throws \app\common\exception\Exception
+     * @throws \myunet\common\exception\Exception
      */
     private function updateQueue(int $status, string $message, bool $isSplit = true)
     {

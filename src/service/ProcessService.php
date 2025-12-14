@@ -7,6 +7,8 @@ namespace myunet\service;
 use myunet\Service;
 use Symfony\Component\Process\Process;
 use myunet\common\extend\CodeExtend;
+use myunet\common\exception\Exception;
+use myunet\service\ModuleService;
 use think\App;
 use think\Container;
 
@@ -23,6 +25,114 @@ class ProcessService extends Service {
     }
 
     /**
+     * 生成 Think 指令
+     * @param string $args 指令参数
+     * @param boolean $simple 仅返回内容
+     * @return string
+     */
+    public static function think(string $args = '', bool $simple = false): string
+    {
+        $command = syspath('think') . ' ' . $args;
+        return $simple ? $command : self::php($command);
+    }
+
+    /**
+     * 生成 Composer 指令
+     * @param string $args 参数
+     * @return string
+     */
+    public static function composer(string $args = ''): string
+    {
+        static $comExec;
+        if (empty($comExec)) {
+            $comExec = ModuleService::getRunVar('com');
+            $comExec = self::isFile($comExec) ? self::php($comExec) : 'composer';
+        }
+        $root = app()->getRootPath();
+        return "{$comExec} -d {$root} {$args}";
+    }
+
+    /**
+     * 创建 Think 进程
+     * @param string $args 执行参数
+     * @param integer $usleep 延时等待
+     * @param boolean $doQuery 查询进程
+     * @return array
+     */
+    public static function thinkExec(string $args, int $usleep = 0, bool $doQuery = false): array
+    {
+        static::create(static::think($args), $usleep);
+        return $doQuery ? static::query(static::think($args, true)) : [];
+    }
+
+    /**
+     * 检查 Think 进程
+     * @param string $args 执行参数
+     * @return array
+     */
+    public static function thinkQuery(string $args): array
+    {
+        return static::query(static::think($args, true));
+    }
+
+    /**
+     * 创建异步进程
+     * @param string $command 任务指令
+     * @param integer $usleep 延时毫米
+     */
+    public static function create(string $command, int $usleep = 0)
+    {
+        if (static::isWin()) {
+            //static::exec(__DIR__ . "/bin/console.exe {$command}");
+            static::exec("start /B {$command}");
+        } else {
+            static::exec("{$command} > /dev/null 2>&1 &");
+        }
+        $usleep > 0 && usleep($usleep);
+    }
+
+    /**
+     * 查询进程列表
+     * @param string $cmd 任务指令
+     * @param string $name 进程名称
+     * @return array
+     */
+    public static function query(string $cmd, string $name = 'php.exe'): array
+    {
+        $list = [];
+        if (static::isWin()) {
+            $lines = static::exec("wmic process where name=\"{$name}\" get processid,CommandLine", true);
+            foreach ($lines as $line) if (is_numeric(stripos($line, $cmd))) {
+                $attr = explode(' ', trim(preg_replace('#\s+#', ' ', $line)));
+                $list[] = ['pid' => array_pop($attr), 'cmd' => join(' ', $attr)];
+            }
+        } else {
+            $lines = static::exec("ps ax|grep -v grep|grep \"{$cmd}\"", true);
+            foreach ($lines as $line) if (is_numeric(stripos($line, $cmd))) {
+                $attr = explode(' ', trim(preg_replace('#\s+#', ' ', $line)));
+                [$pid] = [array_shift($attr), array_shift($attr), array_shift($attr), array_shift($attr)];
+                $list[] = ['pid' => $pid, 'cmd' => join(' ', $attr)];
+            }
+        }
+        return $list;
+    }
+
+    /**
+     * 关闭指定进程
+     * @param integer $pid 进程号
+     * @return boolean
+     */
+    public static function close(int $pid): bool
+    {
+        if (static::isWin()) {
+            static::exec("wmic process {$pid} call terminate");
+        } else {
+            static::exec("kill -9 {$pid}");
+        }
+        return true;
+    }
+
+    /**
      * 立即执行指令
      * @param string $command 执行指令
      * @param boolean $outarr 返回数组
@@ -31,7 +141,7 @@ class ProcessService extends Service {
      */
     public static function exec(string $command, bool $outarr = false, ?callable $callable = null)
     {
-        $root = Container::getInstance()->make(App::class)->getRootPath();
+        $root = app()->getRootPath();
         $process = Process::fromShellCommandline($command)->setWorkingDirectory($root);
         $process->run(is_callable($callable) ? static function ($type, $text) use ($callable, $process) {
             call_user_func($callable, $process, $type, trim(CodeExtend::text2utf8($text))) === true && $process->stop();
@@ -62,6 +172,15 @@ class ProcessService extends Service {
     }
 
     /**
+     * 判断系统类型 UNIX
+     * @return bool
+     */
+    public static function isUnix(): bool
+    {
+        return PATH_SEPARATOR !== ';';
+    }
+
+    /**
      * 检查文件是否存在
      * @param string $file 文件路径
      * @return boolean
@@ -80,6 +199,22 @@ class ProcessService extends Service {
             } catch (\Error|\Exception $exception) {
                 return false;
             }
+        }
+    }
+
+    /**
+     * 静态兼容处理
+     * @param string $method
+     * @param array $arguments
+     * @return array
+     * @throws \think\admin\Exception
+     */
+    public static function __callStatic(string $method, array $arguments)
+    {
+        if ($method === 'thinkCreate') {
+            return self::thinkExec(...$arguments);
+        } else {
+            throw new Exception("method not exists: ProcessService::{$method}()");
         }
     }
 }
