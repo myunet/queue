@@ -35,5 +35,8 @@
                 "myunet\\Library"
             ]
         }
+    },
+    "config": {
+        "preferred-install": "dist"
     }
 }
