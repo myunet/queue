@@ -7,6 +7,7 @@ namespace myunet\service;
 use myunet\common\exception\Exception;
 use myunet\common\extend\CodeExtend;
 use myunet\common\model\SystemQueue;
+use myunet\Service;
 
 class QueueService extends Service {
 

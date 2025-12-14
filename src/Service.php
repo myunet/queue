@@ -1,8 +1,9 @@
 <?php
 
+
 declare (strict_types=1);
 
-namespace myunet\service;
+namespace myunet;
 
 use think\App;
 use think\Container;
@@ -10,6 +11,7 @@ use think\Container;
 /**
  * 自定义服务基类
  * @class Service
+ * @package myunet
  */
 abstract class Service
 {

@@ -4,6 +4,7 @@ declare (strict_types=1);
 
 namespace myunet\service;
 
+use myunet\Service;
 use Symfony\Component\Process\Process;
 use myunet\common\extend\CodeExtend;
 use think\App;
